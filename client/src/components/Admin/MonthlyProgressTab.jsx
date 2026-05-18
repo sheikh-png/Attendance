@@ -11,7 +11,6 @@ const MonthlyProgressTab = () => {
     });
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [loading, setLoading] = useState(true);
-    const [totalClassDays, setTotalClassDays] = useState(0);
 
      useEffect(() => {
         fetchMonthlyStats();
@@ -31,24 +30,29 @@ const MonthlyProgressTab = () => {
             const monthStart = startOfMonth(selectedMonth);
             const monthEnd = endOfMonth(selectedMonth);
             
-            // Calculate total class days (excluding Sundays)
-            const endCheck = isCurrentMonth ? now : monthEnd;
-            const daysInterval = eachDayOfInterval({ 
-                start: monthStart, 
-                end: endCheck 
-            });
-            const classDaysCount = daysInterval.filter(d => !isSunday(d)).length;
-            const currentDay = classDaysCount; // Use class days for stats
-
             // Filter attendance for the selected month
             const currentMonthAttendance = attendance.filter(a => {
                 const aDate = new Date(a.date);
                 return aDate >= monthStart && aDate <= monthEnd;
             });
 
-            // Calculate per student
+            // Calculate per student - considering their join date
             const studentMetrics = students.map(s => {
-                const sClassDaysCount = currentDay; 
+                // Calculate class days for THIS specific student
+                // Start from: max(joinDate, monthStart)
+                const studentJoinDate = new Date(s.joinDate);
+                const effectiveStart = studentJoinDate > monthStart ? studentJoinDate : monthStart;
+                
+                // End on: min(today, monthEnd) if current month, else monthEnd
+                const endCheck = isCurrentMonth ? now : monthEnd;
+                const effectiveEnd = endCheck > monthEnd ? monthEnd : endCheck;
+                
+                // Calculate class days (excluding Sundays) from effective start to effective end
+                const daysInterval = eachDayOfInterval({ 
+                    start: effectiveStart, 
+                    end: effectiveEnd 
+                });
+                const sClassDaysCount = daysInterval.filter(d => !isSunday(d)).length;
 
                 const studentAttendance = currentMonthAttendance.filter(a => a.studentId === s.studentId);
                 const presentCount = studentAttendance.filter(a => a.totalStatus === 'Present').length;
@@ -77,10 +81,8 @@ const MonthlyProgressTab = () => {
             setStats({
                 topPerformers,
                 lowPerformers,
-                houseStats: houseMetrics.sort((a, b) => b.percentage - a.percentage).slice(0, 3),
-                currentDay
+                houseStats: houseMetrics.sort((a, b) => b.percentage - a.percentage).slice(0, 3)
             });
-            setTotalClassDays(currentDay);
 
         } catch (error) {
             console.error('Error fetching stats:', error);
