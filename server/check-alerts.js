@@ -1,32 +1,35 @@
-const { db } = require('./config/db');
+const mongoose = require('./config/db');
+const Student = require('./models/Student');
+const Attendance = require('./models/Attendance');
 const { eachDayOfInterval, subDays, isSunday, format, isBefore, isSameDay } = require('date-fns');
 
 async function checkAlerts() {
     try {
-        const studentsSnapshot = await db.collection('students').get();
-        const students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Wait for connection
+        if (mongoose.connection.readyState !== 1) {
+            await new Promise(resolve => mongoose.connection.once('open', resolve));
+        }
+
+        const students = await Student.find();
 
         const now = new Date();
         const lookbackDate = subDays(now, 45);
         const lookbackStr = format(lookbackDate, 'yyyy-MM-dd');
 
-        const attendanceSnapshot = await db.collection('attendance')
-            .where('date', '>=', lookbackStr)
-            .get();
+        const attendance = await Attendance.find({ date: { $gte: lookbackStr } });
 
         const attendanceMap = {};
-        attendanceSnapshot.forEach(doc => {
-            const data = doc.data();
-            const sId = (data.studentId || '').toString();
-            const docId = (data.student || '').toString();
+        attendance.forEach(record => {
+            const sId = (record.studentId || '').toString();
+            const docId = (record.student || '').toString();
             
             if (sId) {
                 if (!attendanceMap[sId]) attendanceMap[sId] = {};
-                attendanceMap[sId][data.date] = data.totalStatus;
+                attendanceMap[sId][record.date] = record.totalStatus;
             }
             if (docId) {
                 if (!attendanceMap[docId]) attendanceMap[docId] = {};
-                attendanceMap[docId][data.date] = data.totalStatus;
+                attendanceMap[docId][record.date] = record.totalStatus;
             }
         });
 
@@ -37,7 +40,7 @@ async function checkAlerts() {
         students.forEach(student => {
             let currentStreak = 0;
             const sId = (student.studentId || '').toString();
-            const docId = student.id.toString();
+            const docId = student._id.toString();
 
             checkDays.forEach(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');

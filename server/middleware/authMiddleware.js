@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { db } = require('../config/db');
+const Admin = require('../models/Admin');
+const Student = require('../models/Student');
 
 const protect = async (req, res, next) => {
     let token;
@@ -9,49 +10,39 @@ const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Check Fallback Admin
             if (decoded.id === 'env-admin') {
                 req.user = {
-                    _id: 'env-admin',
+                    id: 'env-admin',
                     username: process.env.ADMIN_USERNAME,
                     role: 'admin'
                 };
                 return next();
             }
 
-            // Check Firestore Admin
-            let userDoc = await db.collection('admins').doc(decoded.id).get();
+            let user = await Admin.findById(decoded.id).select('-password');
             let role = 'admin';
 
-            if (!userDoc.exists) {
-                // Check Student
-                userDoc = await db.collection('students').doc(decoded.id).get();
-                if (userDoc.exists) {
-                    // Use role from document, fallback to 'student'
-                    role = userDoc.data().role || 'student';
+            if (!user) {
+                user = await Student.findById(decoded.id).select('-password');
+                if (user) {
+                    role = user.role || 'student';
                 }
             }
 
-            if (!userDoc.exists) {
+            if (!user) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
 
-            const userData = userDoc.data();
-            delete userData.password;
-            
-            req.user = {
-                _id: userDoc.id,
-                ...userData,
-                role
-            };
+            req.user = user.toObject();
+            req.user.id = user._id.toString();
+            req.user.role = role;
+
             next();
         } catch (error) {
             console.error(error);
             res.status(401).json({ message: 'Not authorized, token failed' });
         }
-    }
-
-    if (!token) {
+    } else {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 };

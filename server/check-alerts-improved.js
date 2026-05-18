@@ -3,25 +3,23 @@ const { eachDayOfInterval, subDays, isSunday, format, isBefore, isSameDay } = re
 
 async function checkAlertsImproved() {
     try {
-        const studentsSnapshot = await db.collection('students').get();
-        const students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const students = await db.collection('students').find().toArray();
 
         const now = new Date();
         const lookbackDate = subDays(now, 45);
 
-        const attendanceSnapshot = await db.collection('attendance')
-            .where('date', '>=', format(lookbackDate, 'yyyy-MM-dd'))
-            .get();
+        const attendance = await db.collection('attendance')
+            .find({ date: { $gte: format(lookbackDate, 'yyyy-MM-dd') } })
+            .toArray();
 
         const attendanceMap = {};
-        attendanceSnapshot.forEach(doc => {
-            const data = doc.data();
-            const sId = (data.studentId || '').toString();
-            const docId = (data.student || '').toString();
+        attendance.forEach(record => {
+            const sId = (record.studentId || '').toString();
+            const docId = (record.student || '').toString();
             [sId, docId].forEach(id => {
                 if (id) {
                     if (!attendanceMap[id]) attendanceMap[id] = {};
-                    attendanceMap[id][data.date] = data.totalStatus;
+                    attendanceMap[id][record.date] = record.totalStatus;
                 }
             });
         });
@@ -33,11 +31,11 @@ async function checkAlertsImproved() {
         students.forEach(student => {
             let currentStreak = 0;
             const sId = (student.studentId || '').toString();
-            const docId = student.id.toString();
+            const docId = student._id.toString();
 
             let studentJoinedDate = lookbackDate;
             if (student.createdAt) {
-                const parsed = student.createdAt.toDate ? student.createdAt.toDate() : new Date(student.createdAt);
+                const parsed = new Date(student.createdAt);
                 if (!isNaN(parsed.getTime())) studentJoinedDate = parsed;
             }
             const joinedDateStr = format(studentJoinedDate, 'yyyy-MM-dd');

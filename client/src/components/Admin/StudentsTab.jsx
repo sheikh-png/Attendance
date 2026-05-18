@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
     Search, Filter, Plus, Download, Edit2, Trash2, 
     User, Users, UserCheck, UserX,
@@ -135,7 +135,7 @@ const StudentsTab = ({ stats, refreshStats }) => {
 
     const fetchStudents = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/students');
+            const { data } = await axios.get('/api/admin/students');
             setStudents(data);
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -146,9 +146,9 @@ const StudentsTab = ({ stats, refreshStats }) => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put(`http://localhost:5000/api/admin/students/${currentStudent._id}`, formData);
+                await axios.put(`/api/admin/students/${currentStudent._id}`, formData);
             } else {
-                await axios.post('http://localhost:5000/api/admin/students', formData);
+                await axios.post('/api/admin/students', formData);
             }
             fetchStudents();
             if (refreshStats) refreshStats();
@@ -170,7 +170,7 @@ const StudentsTab = ({ stats, refreshStats }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this student?')) {
             try {
-                await axios.delete(`http://localhost:5000/api/admin/students/${id}`);
+                await axios.delete(`/api/admin/students/${id}`);
                 fetchStudents();
                 if (refreshStats) refreshStats();
             } catch (error) {
@@ -184,7 +184,7 @@ const StudentsTab = ({ stats, refreshStats }) => {
         const newRole = isCurrentlyCoAdmin ? 'student' : 'co-admin';
         
         try {
-            await axios.put(`http://localhost:5000/api/admin/students/${student._id}/role`, { role: newRole });
+            await axios.put(`/api/admin/students/${student._id}/role`, { role: newRole });
             fetchStudents();
             if (refreshStats) refreshStats();
         } catch (error) {
@@ -453,3 +453,4 @@ const StudentsTab = ({ stats, refreshStats }) => {
 };
 
 export default StudentsTab;
+

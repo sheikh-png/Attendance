@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Users, Home, Calendar, Award, AlertTriangle, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { format, getDaysInMonth, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, eachDayOfInterval, isSunday } from 'date-fns';
@@ -23,8 +23,8 @@ const MonthlyProgressTab = () => {
     const fetchMonthlyStats = async () => {
         setLoading(true);
         try {
-            const { data: students } = await axios.get('http://localhost:5000/api/admin/students');
-            const { data: attendance } = await axios.get('http://localhost:5000/api/attendance/all');
+            const { data: students } = await axios.get('/api/admin/students');
+            const { data: attendance } = await axios.get('/api/attendance/all');
             
             const now = new Date();
             const isCurrentMonth = isSameMonth(selectedMonth, now);
@@ -237,3 +237,4 @@ const MonthlyProgressTab = () => {
 };
 
 export default MonthlyProgressTab;
+

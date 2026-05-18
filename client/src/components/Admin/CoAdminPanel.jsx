@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
     Key, Timer, RefreshCw, CheckCircle2, XCircle, 
     Copy, Check, ShieldCheck, Zap, Sparkles
@@ -18,7 +18,7 @@ const CoAdminPanel = () => {
 
     const fetchActiveCodes = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/active-codes');
+            const { data } = await axios.get('/api/admin/active-codes');
             setActiveCodes(data);
         } catch (error) {
             console.error('Error fetching active codes:', error);
@@ -28,7 +28,7 @@ const CoAdminPanel = () => {
     const generateCode = async (slot) => {
         setGenerating(slot);
         try {
-            await axios.post('http://localhost:5000/api/admin/generate-code', { slot });
+            await axios.post('/api/admin/generate-code', { slot });
             await fetchActiveCodes();
         } catch (error) {
             alert('Error generating code: ' + (error.response?.data?.message || error.message));
@@ -47,7 +47,7 @@ const CoAdminPanel = () => {
         { 
             id: 'morning', 
             label: 'Morning Session', 
-            icon: '🌅',
+            icon: '🌞',
             gradient: 'from-orange-400 to-amber-600',
             lightBg: 'bg-orange-50',
             textColor: 'text-orange-600',
@@ -196,7 +196,7 @@ const CoAdminPanel = () => {
             {/* Footer Tip */}
             <div className="bg-slate-100/50 rounded-2xl p-4 text-center">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                    Codes are valid for 20 minutes • System Refresh every 10 seconds
+                    Codes are valid for 20 minutes • System refreshes every 10 seconds
                 </p>
             </div>
         </div>
@@ -204,3 +204,4 @@ const CoAdminPanel = () => {
 };
 
 export default CoAdminPanel;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, startOfDay, isSameDay, isSameMonth, parseISO } from 'date-fns';
@@ -18,8 +18,8 @@ const TotalAbsentsTab = () => {
         setLoading(true);
         try {
             const [stdRes, attRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/admin/students'),
-                axios.get('http://localhost:5000/api/attendance/all')
+                axios.get('/api/admin/students'),
+                axios.get('/api/attendance/all')
             ]);
             setStudents(stdRes.data);
             setAllAttendance(attRes.data);
@@ -244,3 +244,4 @@ const TotalAbsentsTab = () => {
 };
 
 export default TotalAbsentsTab;
+

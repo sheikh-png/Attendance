@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
     LayoutDashboard, Users, Calendar, BarChart3, 
@@ -38,12 +38,12 @@ const AdminDashboard = () => {
         setIsRefreshing(true);
         try {
             // Fetch basic stats
-            const statsRes = await axios.get('http://localhost:5000/api/admin/dashboard-stats');
+            const statsRes = await axios.get('/api/admin/dashboard-stats');
             setStats(prev => ({ ...prev, ...statsRes.data }));
             
             // Separately fetch alert count for the badge
             try {
-                const alertsRes = await axios.get('http://localhost:5000/api/admin/alerts');
+                const alertsRes = await axios.get('/api/admin/alerts');
                 setStats(prev => ({ ...prev, alertCount: alertsRes.data.length }));
             } catch (alertError) {
                 console.error('Error fetching alerts for badge:', alertError);
@@ -191,3 +191,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

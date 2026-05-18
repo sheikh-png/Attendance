@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
     Clock, Calendar, CheckCircle2, XCircle, 
@@ -6,7 +6,7 @@ import {
     Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown, Key, RefreshCw 
 } from 'lucide-react';
 import axios from 'axios';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
+import { format, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
 import CoAdminPanel from '../components/Admin/CoAdminPanel';
 
 const StudentDashboard = () => {
@@ -42,7 +42,7 @@ const StudentDashboard = () => {
 
     const fetchUserProfile = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/auth/profile');
+            const { data } = await axios.get('/api/auth/profile');
             // Sync with local storage and context
             updateUserData(data);
         } catch (error) {
@@ -79,25 +79,34 @@ const StudentDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/student/dashboard');
+            const { data } = await axios.get('/api/student/dashboard');
             setDashboardData(data);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         }
     };
 
+    const joinDate = user?.joinDate ? startOfDay(new Date(user.joinDate)) : null;
+
     useEffect(() => {
         calculateMonthlyStats();
-    }, [viewDate, dashboardData.attendance]);
+    }, [viewDate, dashboardData.attendance, user?.joinDate]);
 
     const calculateMonthlyStats = () => {
         const start = startOfMonth(viewDate);
         const end = endOfMonth(viewDate);
         const now = new Date();
         
+        const effectiveStart = joinDate && joinDate > start ? joinDate : start;
+        const reportEnd = isSameMonth(viewDate, now) ? now : end;
+        if (joinDate && effectiveStart > reportEnd) {
+            setMonthlyStats({ totalDays: 0, presentDays: 0, absentDays: 0, attendancePercentage: 0 });
+            return;
+        }
+
         // String-based boundaries for robust comparison (fixes timezone bugs)
-        const startStr = format(start, 'yyyy-MM-dd');
-        const endStr = format(end, 'yyyy-MM-dd');
+        const startStr = format(effectiveStart, 'yyyy-MM-dd');
+        const endStr = format(reportEnd, 'yyyy-MM-dd');
 
         const attendanceArr = dashboardData.attendance || [];
 
@@ -119,8 +128,8 @@ const StudentDashboard = () => {
         ).length;
         
         const daysInterval = eachDayOfInterval({ 
-            start: start, 
-            end: isSameMonth(viewDate, now) ? now : end 
+            start: effectiveStart, 
+            end: reportEnd 
         });
         const classDays = daysInterval.filter(d => !isSunday(d));
         
@@ -158,7 +167,7 @@ const StudentDashboard = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/settings');
+            const { data } = await axios.get('/api/admin/settings');
             setSettings(data);
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -236,7 +245,7 @@ const StudentDashboard = () => {
         
         // Marking Absent doesn't require a code
         try {
-            await axios.post('http://localhost:5000/api/attendance/mark', { slot, isPresent });
+            await axios.post('/api/attendance/mark', { slot, isPresent });
             showToast('Marked as Absent for this session.', 'error');
             setTimeout(() => { handleRefresh(); }, 500);
         } catch (error) {
@@ -249,7 +258,7 @@ const StudentDashboard = () => {
         setSubmitting(true);
         try {
             await axios.post(
-                'http://localhost:5000/api/attendance/mark', 
+                '/api/attendance/mark', 
                 { slot: showCodeModal, isPresent: true, code: inputCode }
             );
 
@@ -281,7 +290,7 @@ const StudentDashboard = () => {
             <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute top-60 -left-20 w-[400px] h-[400px] bg-cyan-400/20 rounded-full blur-[100px] pointer-events-none" />
 
-            {/* ✅ Custom Toast Popup */}
+            {/* Custom Toast Popup */}
             {toast && (
                 <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999] w-full max-w-sm px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-300 ${
                     toast.type === 'success'
@@ -295,7 +304,7 @@ const StudentDashboard = () => {
                     <button
                         onClick={() => setToast(null)}
                         className="text-white/70 hover:text-white text-lg font-black leading-none"
-                    >✕</button>
+                    >×</button>
                 </div>
             )}
 
@@ -542,6 +551,7 @@ const StudentDashboard = () => {
                                     });
                                 }
 
+                                const isBeforeJoin = joinDate && startOfDay(day) < joinDate;
                                 let statusColor = 'bg-slate-50 text-slate-300';
                                 if (record?.totalStatus === 'Present') {
                                     statusColor = 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400/50';
@@ -549,7 +559,7 @@ const StudentDashboard = () => {
                                     statusColor = 'bg-rose-500 text-white shadow-sm ring-1 ring-rose-400/50';
                                 } else if (isSun) {
                                     statusColor = 'bg-rose-500/10 text-rose-500 font-black';
-                                } else if (isTodayExpired || (isCurrentMonth && day < now && !isTodayDate && !record)) {
+                                } else if (isTodayExpired || (isCurrentMonth && day < now && !isTodayDate && !record && !isBeforeJoin)) {
                                     statusColor = 'bg-rose-500 text-white shadow-sm ring-1 ring-rose-400/50';
                                 }
                                 
@@ -635,4 +645,5 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
+
 

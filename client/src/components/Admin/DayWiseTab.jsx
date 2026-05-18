@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, Search, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import axios from 'axios';
 import { 
@@ -26,9 +26,9 @@ const DayWiseTab = () => {
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
             
             const [attRes, stdRes, settRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/attendance/day/${dateStr}`),
-                axios.get('http://localhost:5000/api/admin/students'),
-                axios.get('http://localhost:5000/api/admin/settings')
+                axios.get(`/api/attendance/day/${dateStr}`),
+                axios.get('/api/admin/students'),
+                axios.get('/api/admin/settings')
             ]);
             
             setAttendance(attRes.data);
@@ -400,3 +400,4 @@ const DayWiseTab = () => {
 };
 
 export default DayWiseTab;
+

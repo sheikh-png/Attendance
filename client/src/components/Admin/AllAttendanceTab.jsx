@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     format,
@@ -58,9 +58,9 @@ const AllAttendanceTab = (props) => {
             const month = getMonth(selectedDate) + 1;
 
             const [attRes, stdRes, settRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/attendance/month/${year}/${month}`),
-                axios.get('http://localhost:5000/api/admin/students'),
-                axios.get('http://localhost:5000/api/admin/settings')
+                axios.get(`/api/attendance/month/${year}/${month}`),
+                axios.get('/api/admin/students'),
+                axios.get('/api/admin/settings')
             ]);
             setAttendance(attRes.data);
             setStudents(stdRes.data);
@@ -76,7 +76,7 @@ const AllAttendanceTab = (props) => {
         if (!editingStudent) return;
         setSaving(true);
         try {
-            await axios.post('http://localhost:5000/api/attendance/admin-update', {
+            await axios.post('/api/attendance/admin-update', {
                 studentId: editingStudent.studentId,
                 date: editDate,
                 slots: editSlots
@@ -514,3 +514,4 @@ const AllAttendanceTab = (props) => {
 };
 
 export default AllAttendanceTab;
+

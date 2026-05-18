@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Key, Timer, RefreshCw, CheckCircle2, AlertCircle, Copy, Check } from 'lucide-react';
 import axios from 'axios';
 
@@ -16,7 +16,7 @@ const AttendanceCodesTab = () => {
 
     const fetchActiveCodes = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/active-codes');
+            const { data } = await axios.get('/api/admin/active-codes');
             setActiveCodes(data);
         } catch (error) {
             console.error('Error fetching active codes:', error);
@@ -26,7 +26,7 @@ const AttendanceCodesTab = () => {
     const generateCode = async (slot) => {
         setGenerating(slot);
         try {
-            await axios.post('http://localhost:5000/api/admin/generate-code', { slot });
+            await axios.post('/api/admin/generate-code', { slot });
             await fetchActiveCodes();
         } catch (error) {
             alert('Error generating code: ' + (error.response?.data?.message || error.message));
@@ -165,3 +165,4 @@ const AttendanceCodesTab = () => {
 };
 
 export default AttendanceCodesTab;
+

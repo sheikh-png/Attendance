@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Wifi, Clock, Save, Plus, X, ShieldCheck, Camera, User, Lock } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +26,7 @@ const SettingsTab = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/settings');
+            const { data } = await axios.get('/api/admin/settings');
             setSettings(data);
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -52,12 +52,12 @@ const SettingsTab = () => {
         if (!profileData.username) return alert('Username is required');
         setProfileLoading(true);
         try {
-            const { data } = await axios.put('http://localhost:5000/api/admin/profile', profileData);
+            const { data } = await axios.put('/api/admin/profile', profileData);
             updateUserData(data);
-            alert('✅ Profile Updated Successfully!');
+            alert('✓ Profile Updated Successfully!');
             setProfileData({ ...profileData, password: '' }); // Clear password field
         } catch (error) {
-            alert('❌ Error updating profile: ' + (error.response?.data?.message || error.message));
+            alert('✕ Error updating profile: ' + (error.response?.data?.message || error.message));
         } finally {
             setProfileLoading(false);
         }
@@ -66,7 +66,7 @@ const SettingsTab = () => {
     const handleSave = async () => {
         setLoading(true);
         try {
-            await axios.put('http://localhost:5000/api/admin/settings', settings);
+            await axios.put('/api/admin/settings', settings);
             alert('Settings Saved Successfully');
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -206,3 +206,4 @@ const SettingsTab = () => {
 };
 
 export default SettingsTab;
+

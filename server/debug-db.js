@@ -1,19 +1,24 @@
-const { db } = require('./config/db');
+const mongoose = require('./config/db');
+const Student = require('./models/Student');
+const Attendance = require('./models/Attendance');
 
-async function debugAlerts() {
+async function debugData() {
     try {
-        const studentsSnapshot = await db.collection('students').limit(5).get();
+        // Wait for connection
+        if (mongoose.connection.readyState !== 1) {
+            await new Promise(resolve => mongoose.connection.once('open', resolve));
+        }
+
+        const students = await Student.find().limit(5);
         console.log('--- Students ---');
-        studentsSnapshot.forEach(doc => {
-            const data = doc.data();
-            console.log(`Name: ${data.fullName}, studentId: ${data.studentId}, id: ${doc.id}`);
+        students.forEach(s => {
+            console.log(`Name: ${s.fullName}, studentId: ${s.studentId}, id: ${s._id}`);
         });
 
-        const attendanceSnapshot = await db.collection('attendance').limit(5).get();
+        const attendance = await Attendance.find().limit(5);
         console.log('\n--- Attendance ---');
-        attendanceSnapshot.forEach(doc => {
-            const data = doc.data();
-            console.log(`studentId: ${data.studentId}, date: ${data.date}, totalStatus: ${data.totalStatus}`);
+        attendance.forEach(a => {
+            console.log(`studentId: ${a.studentId}, date: ${a.date}, totalStatus: ${a.totalStatus}`);
         });
 
         process.exit();
@@ -23,4 +28,4 @@ async function debugAlerts() {
     }
 }
 
-debugAlerts();
+debugData();

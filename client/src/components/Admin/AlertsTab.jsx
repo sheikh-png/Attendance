@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
     AlertCircle, MessageSquare, Mail, 
     ChevronRight, Send, AlertTriangle, Phone,
@@ -21,7 +21,7 @@ const AlertsTab = () => {
         try {
             const month = selectedDate.getMonth() + 1;
             const year = selectedDate.getFullYear();
-            const { data } = await axios.get(`http://localhost:5000/api/admin/alerts?month=${month}&year=${year}&t=${new Date().getTime()}`);
+            const { data } = await axios.get(`/api/admin/alerts?month=${month}&year=${year}&t=${new Date().getTime()}`);
             setAlerts(data);
         } catch (error) {
             console.error('Error fetching alerts:', error);
@@ -169,3 +169,4 @@ const AlertsTab = () => {
 };
 
 export default AlertsTab;
+

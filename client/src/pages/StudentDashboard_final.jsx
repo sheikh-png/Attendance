@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
     Clock, Calendar, CheckCircle2, XCircle, 
@@ -6,7 +6,7 @@ import {
     Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown 
 } from 'lucide-react';
 import axios from 'axios';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
+import { format, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
 
 const StudentDashboard = () => {
     const { user, logout } = useAuth();
@@ -38,25 +38,34 @@ const StudentDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/student/dashboard');
+            const { data } = await axios.get('/api/student/dashboard');
             setDashboardData(data);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         }
     };
 
+    const joinDate = user?.joinDate ? startOfDay(new Date(user.joinDate)) : null;
+
     useEffect(() => {
         calculateMonthlyStats();
-    }, [viewDate, dashboardData.attendance]);
+    }, [viewDate, dashboardData.attendance, user?.joinDate]);
 
     const calculateMonthlyStats = () => {
         const start = startOfMonth(viewDate);
         const end = endOfMonth(viewDate);
         const now = new Date();
         
+        const effectiveStart = joinDate && joinDate > start ? joinDate : start;
+        const reportEnd = isSameMonth(viewDate, now) ? now : end;
+        if (joinDate && effectiveStart > reportEnd) {
+            setMonthlyStats({ totalDays: 0, presentDays: 0, absentDays: 0, attendancePercentage: 0 });
+            return;
+        }
+
         // String-based boundaries for robust comparison (fixes timezone bugs)
-        const startStr = format(start, 'yyyy-MM-dd');
-        const endStr = format(end, 'yyyy-MM-dd');
+        const startStr = format(effectiveStart, 'yyyy-MM-dd');
+        const endStr = format(reportEnd, 'yyyy-MM-dd');
 
         const attendanceArr = dashboardData.attendance || [];
 
@@ -78,8 +87,8 @@ const StudentDashboard = () => {
         ).length;
         
         const daysInterval = eachDayOfInterval({ 
-            start: start, 
-            end: isSameMonth(viewDate, now) ? now : end 
+            start: effectiveStart, 
+            end: reportEnd 
         });
         const classDays = daysInterval.filter(d => !isSunday(d));
 
@@ -111,7 +120,7 @@ const StudentDashboard = () => {
 
     const fetchSettings = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/admin/settings');
+            const { data } = await axios.get('/api/admin/settings');
             setSettings(data);
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -177,7 +186,7 @@ const StudentDashboard = () => {
 
     const markAttendance = async (slot, isPresent = true) => {
         try {
-            await axios.post('http://localhost:5000/api/attendance/mark', { slot, isPresent });
+            await axios.post('/api/attendance/mark', { slot, isPresent });
             const statusText = isPresent ? 'Present' : 'Absent';
             alert(`Marked as ${statusText}!`);
             
@@ -449,11 +458,12 @@ const StudentDashboard = () => {
                                     const record = dashboardData.attendance.find(a => a.date === dateStr);
                                     const isCurrentMonth = day.getMonth() === viewDate.getMonth();
                                     const isSun = isSunday(day);
+                                    const isBeforeJoin = joinDate && startOfDay(day) < joinDate;
                                     
                                     let statusColor = 'bg-slate-50 text-slate-300';
                                     if (isSun) statusColor = 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-200';
                                     else if (record?.totalStatus === 'Present') statusColor = 'bg-emerald-500 text-white shadow-sm';
-                                    else if (record?.totalStatus === 'Absent' || (isCurrentMonth && day < now && !isSameDay(day, now) && !record)) statusColor = 'bg-rose-500 text-white shadow-sm';
+                                    else if (record?.totalStatus === 'Absent' || (isCurrentMonth && day < now && !isSameDay(day, now) && !record && !isBeforeJoin)) statusColor = 'bg-rose-500 text-white shadow-sm';
                                     
                                     return (
                                         <div 
@@ -499,4 +509,5 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
+
 
