@@ -25,8 +25,9 @@ app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 
 // Basic root + health endpoints useful for uptime checks and Render health checks
-app.get('/', (req, res) => {
-    res.json({ status: 'ok', environment: process.env.NODE_ENV || 'development' });
+
+app.get("/", (req, res) => {
+  res.send("Backend Running");
 });
 
 app.get('/healthz', (req, res) => res.send('OK'));
