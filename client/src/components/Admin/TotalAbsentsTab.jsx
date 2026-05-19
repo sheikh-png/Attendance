@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle, Download } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, startOfDay, isSameDay, isSameMonth, parseISO } from 'date-fns';
-import * as XLSX from 'xlsx';
 
 const TotalAbsentsTab = () => {
     const [students, setStudents] = useState([]);
@@ -143,50 +142,12 @@ const TotalAbsentsTab = () => {
             <div className="flex items-center justify-center h-64">
                 <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
-     
+        );
+    }
 
-    const handleExcelExport = () => {
-        // Prepare data for export
-        const exportData = studentStats.map((student, index) => ({
-            'Sr. No.': index + 1,
-            'Student Name': student.fullName,
-            'Student ID': student.studentId,
-            'Course': student.course,
-            'House': student.house,
-            'Current Month Absents': student.monthlyAbsents,
-            'Total Lifetime Absents': student.totalAbsents
-        }));
-
-        // Create workbook
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Total Absents');
-
-        // Style the header row3">
-                    <div className="flex items-center gap-4 bg-white px-2 py-1.5 rounded-xl shadow-sm border border-slate-200">
-                        <button 
-                            onClick={handlePrevMonth}
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-                        <div className="w-32 text-center">
-                            <span className="font-bold text-slate-700">{format(selectedDate, 'MMMM yyyy')}</span>
-                        </div>
-                        <button 
-                            onClick={handleNextMonth}
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-                        >
-                            <ChevronRight size={20} />
-                        </button>
-                    </div>
-                    <button
-                        onClick={handleExcelExport}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98]"
-                        title="Download as Excel"
-                    >
-                        <Download size={18} />
-                        <span className="hidden sm:inline">Export</span-row md:items-center justify-between gap-4">
+    return (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
                     <div className="relative max-w-md w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
