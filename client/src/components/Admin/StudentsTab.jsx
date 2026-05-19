@@ -2,7 +2,7 @@
 import { 
     Search, Filter, Plus, Download, Edit2, Trash2, 
     User, Users, UserCheck, UserX,
-    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert 
+    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert, Eye, EyeOff
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -124,6 +124,7 @@ const StudentsTab = ({ stats, refreshStats }) => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentStudent, setCurrentStudent] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '', studentId: '', gender: 'Male', course: 'SOP', house: 'Malhar',
         email: '', mobileNumber: '', username: '', password: ''
@@ -165,6 +166,7 @@ const StudentsTab = ({ stats, refreshStats }) => {
             email: '', mobileNumber: '', username: '', password: '', joinDate: new Date().toISOString().split('T')[0]
         });
         setIsEditing(false);
+        setShowPassword(false);
     };
 
     const handleDelete = async (id) => {
@@ -422,11 +424,24 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Password</label>
-                                        <input 
-                                            type="password" className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                                            placeholder={isEditing ? 'Leave blank to keep same' : 'Enter password'}
-                                            value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!isEditing}
-                                        />
+                                        <div className="relative">
+                                            <input 
+                                                type={showPassword ? "text" : "password"}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none text-sm pr-10"
+                                                placeholder={isEditing ? 'Leave blank to keep same' : 'Enter password'}
+                                                value={formData.password} 
+                                                onChange={e => setFormData({...formData, password: e.target.value})} 
+                                                required={!isEditing}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                title={showPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

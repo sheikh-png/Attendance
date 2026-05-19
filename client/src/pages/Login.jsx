@@ -55,7 +55,7 @@ const Login = () => {
                         <div className="inline-flex p-3 rounded-2xl bg-primary-100 text-primary-600 mb-2">
                             <LogIn size={32} />
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-900">Welcome Back</h1>
+                        <h1 className="text-3xl font-bold text-slate-900">DNT Attendance</h1>
                         <p className="text-slate-500">Sign in to your account</p>
                     </div>
 
