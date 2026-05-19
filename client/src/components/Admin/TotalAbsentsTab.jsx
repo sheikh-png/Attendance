@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle, Download } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, startOfDay, isSameDay, isSameMonth, parseISO } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 const TotalAbsentsTab = () => {
     const [students, setStudents] = useState([]);
@@ -44,6 +45,25 @@ const TotalAbsentsTab = () => {
             newDate.setMonth(newDate.getMonth() + 1);
             return newDate;
         });
+    };
+
+    const exportToExcel = () => {
+        const exportData = studentStats.map(student => ({
+            'Full Name': student.fullName,
+            'Student ID': student.studentId,
+            'Course': student.course,
+            'House': student.house,
+            'Gender': student.gender || 'N/A',
+            'Current Month Absents': student.monthlyAbsents,
+            'Total Lifetime Absents': student.totalAbsents
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Absents');
+        
+        const fileName = `Attendance_Absents_${format(selectedDate, 'MMMM_yyyy')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
     };
 
     // Find the earliest date in the entire system to use as a fallback for missing Join Dates
@@ -161,7 +181,7 @@ const TotalAbsentsTab = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white px-2 py-1.5 rounded-xl shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 bg-white px-2 py-1.5 rounded-xl shadow-sm border border-slate-200">
                     <button 
                         onClick={handlePrevMonth}
                         className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
@@ -178,6 +198,14 @@ const TotalAbsentsTab = () => {
                         <ChevronRight size={20} />
                     </button>
                 </div>
+                <button 
+                    onClick={exportToExcel}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98]"
+                    title="Export to Excel"
+                >
+                    <Download size={18} />
+                    Export Excel
+                </button>
             </div>
 
             <div className="glass-card overflow-hidden">
