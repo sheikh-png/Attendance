@@ -479,8 +479,8 @@ const StudentDashboard = () => {
                             </div>
 
                             <div className="mt-5 flex items-center justify-center gap-3 pt-4 border-t border-slate-50">
-                                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /><span className="text-[8px] font-black text-slate-400">P</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /><span className="text-[8px] font-black text-slate-400">A</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /><span className="text-[8px] font-black text-slate-400">P ({monthlyStats.presentDays})</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /><span className="text-[8px] font-black text-slate-400">A ({monthlyStats.absentDays})</span></div>
                             </div>
                         </div>
 

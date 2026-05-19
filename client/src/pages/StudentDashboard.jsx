@@ -579,11 +579,11 @@ const StudentDashboard = () => {
                         <div className="mt-6 flex flex-wrap items-center justify-center gap-4 pt-5 border-t border-slate-100">
                             <div className="flex items-center gap-2">
                                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Present</span>
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Present ({monthlyStats.presentDays})</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Absent</span>
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Absent ({monthlyStats.absentDays})</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2.5 h-2.5 rounded-md bg-slate-100 border border-slate-200" />
