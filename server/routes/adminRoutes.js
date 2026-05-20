@@ -11,6 +11,7 @@ const {
     getDashboardStats,
     getAttendanceAlerts,
     updateProfile,
+    changePassword,
     updateStudentRole
 } = require('../controllers/adminController');
 const { generateCode, getActiveCodes } = require('../controllers/attendanceCodeController');
@@ -35,6 +36,7 @@ router.delete('/students/:id', deleteStudent);
 router.post('/students/:id/reset-wifi', resetWiFi);
 router.put('/settings', updateSettings);
 router.put('/profile', updateProfile);
+router.post('/change-password', changePassword);
 router.get('/dashboard-stats', getDashboardStats);
 router.get('/alerts', getAttendanceAlerts);
 

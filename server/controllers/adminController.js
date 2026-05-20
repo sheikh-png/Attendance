@@ -293,6 +293,45 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+exports.changePassword = async (req, res) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const adminId = req.user.id;
+
+    try {
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'New password and confirm password do not match' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+
+        const admin = await Admin.findById(adminId);
+        if (!admin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        // Verify old password
+        const isValidPassword = await bcrypt.compare(oldPassword, admin.password);
+        if (!isValidPassword) {
+            return res.status(400).json({ message: 'Old password is incorrect' });
+        }
+
+        // Hash and update new password
+        const salt = await bcrypt.genSalt(10);
+        admin.password = await bcrypt.hash(newPassword, salt);
+        await admin.save();
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.updateStudentRole = async (req, res) => {
     const { role } = req.body;
     if (!['student', 'co-admin'].includes(role)) {
