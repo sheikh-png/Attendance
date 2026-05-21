@@ -2,7 +2,7 @@
 import { 
     Search, Filter, Plus, Download, Edit2, Trash2, 
     User, Users, UserCheck, UserX,
-    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert, Eye, EyeOff
+    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert, Eye, EyeOff, Check
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -125,6 +125,10 @@ const StudentsTab = ({ stats, refreshStats }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentStudent, setCurrentStudent] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+    const [resetPasswordData, setResetPasswordData] = useState({ newPassword: '', confirmPassword: '' });
+    const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+    const [showResetPasswords, setShowResetPasswords] = useState({ new: false, confirm: false });
     const [formData, setFormData] = useState({
         fullName: '', studentId: '', gender: 'Male', course: 'SOP', house: 'Malhar',
         email: '', mobileNumber: '', username: '', password: ''
@@ -191,6 +195,42 @@ const StudentsTab = ({ stats, refreshStats }) => {
             if (refreshStats) refreshStats();
         } catch (error) {
             alert(error.response?.data?.message || 'Error updating student role');
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+
+        if (!resetPasswordData.newPassword || !resetPasswordData.confirmPassword) {
+            alert('Both password fields are required');
+            return;
+        }
+
+        if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+            alert('Password and confirm password do not match');
+            return;
+        }
+
+        if (resetPasswordData.newPassword.length < 6) {
+            alert('Password must be at least 6 characters long');
+            return;
+        }
+
+        setResetPasswordLoading(true);
+        try {
+            const { data } = await axios.put(`/api/admin/students/${currentStudent._id}/reset-password`, {
+                newPassword: resetPasswordData.newPassword,
+                confirmPassword: resetPasswordData.confirmPassword
+            });
+            
+            alert(`Password reset successfully for ${currentStudent.fullName}`);
+            setShowResetPasswordModal(false);
+            setResetPasswordData({ newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            console.error('Password reset error:', error.response?.data || error.message);
+            alert('Error: ' + (error.response?.data?.message || 'Error resetting password'));
+        } finally {
+            setResetPasswordLoading(false);
         }
     };
 
@@ -423,12 +463,19 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Password</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                            Password
+                                            {isEditing && (
+                                                <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[9px] font-bold">
+                                                    <Check size={12} /> Set
+                                                </span>
+                                            )}
+                                        </label>
                                         <div className="relative">
                                             <input 
                                                 type={showPassword ? "text" : "password"}
                                                 className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none text-sm pr-10"
-                                                placeholder={isEditing ? 'Leave blank to keep same' : 'Enter password'}
+                                                placeholder={isEditing ? '••••••••••••' : 'Enter password'}
                                                 value={formData.password} 
                                                 onChange={e => setFormData({...formData, password: e.target.value})} 
                                                 required={!isEditing}
@@ -442,6 +489,11 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
+                                        {isEditing && (
+                                            <p className="text-[9px] text-slate-500 font-medium">
+                                                💡 Leave blank to keep current password. Enter new value to change.
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -452,11 +504,104 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                 >
                                     Cancel
                                 </button>
+                                {isEditing && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowResetPasswordModal(true)}
+                                        className="flex-1 px-4 py-2.5 rounded-xl border border-amber-200 text-amber-600 font-bold text-sm hover:bg-amber-50 transition-colors"
+                                    >
+                                        Reset Password
+                                    </button>
+                                )}
                                 <button 
                                     type="submit"
                                     className="flex-1 px-4 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm hover:bg-primary-700 shadow-lg shadow-primary-500/30 transition-all active:scale-[0.98]"
                                 >
                                     {isEditing ? 'Update Student' : 'Create Student'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Password Reset Modal */}
+            {showResetPasswordModal && currentStudent && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-2xl font-black text-slate-900">Reset Password</h3>
+                            <button 
+                                onClick={() => setShowResetPasswordModal(false)}
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                            >
+                                <Eye size={20} />
+                            </button>
+                        </div>
+
+                        <p className="text-sm text-slate-600 mb-6">
+                            Reset password for <span className="font-bold">{currentStudent.fullName}</span>
+                        </p>
+
+                        <form onSubmit={handleResetPassword} className="space-y-4">
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">New Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showResetPasswords.new ? 'text' : 'password'}
+                                        value={resetPasswordData.newPassword}
+                                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        placeholder="Enter new password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowResetPasswords({ ...showResetPasswords, new: !showResetPasswords.new })}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showResetPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Minimum 6 characters</p>
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showResetPasswords.confirm ? 'text' : 'password'}
+                                        value={resetPasswordData.confirmPassword}
+                                        onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        placeholder="Confirm password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowResetPasswords({ ...showResetPasswords, confirm: !showResetPasswords.confirm })}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showResetPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowResetPasswordModal(false)}
+                                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={resetPasswordLoading}
+                                    className="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-all disabled:opacity-50"
+                                >
+                                    {resetPasswordLoading ? 'Resetting...' : 'Reset Password'}
                                 </button>
                             </div>
                         </form>

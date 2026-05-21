@@ -13,11 +13,10 @@ const SettingsTab = () => {
         }
     });
     const [profileData, setProfileData] = useState({
-        username: user?.username || '',
-        password: '',
         profilePhoto: user?.profilePhoto || ''
     });
-    const [passwordData, setPasswordData] = useState({
+    const [securityData, setSecurityData] = useState({
+        username: user?.username || '',
         oldPassword: '',
         newPassword: '',
         confirmPassword: ''
@@ -27,7 +26,7 @@ const SettingsTab = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [profileLoading, setProfileLoading] = useState(false);
-    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [securityLoading, setSecurityLoading] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -58,52 +57,85 @@ const SettingsTab = () => {
     };
 
     const handleProfileSave = async () => {
-        if (!profileData.username) return alert('Username is required');
         setProfileLoading(true);
         try {
+            console.log('Sending profile update with photo');
             const { data } = await axios.put('/api/admin/profile', profileData);
+            console.log('Profile update response:', data);
             updateUserData(data);
-            alert('✓ Profile Updated Successfully!');
-            setProfileData({ ...profileData, password: '' }); // Clear password field
+            alert('Profile Photo Updated Successfully!');
         } catch (error) {
-            alert('✕ Error updating profile: ' + (error.response?.data?.message || error.message));
+            console.error('Profile update error:', {
+                status: error.response?.status,
+                message: error.response?.data?.message,
+                fullError: error.response?.data,
+                errorMessage: error.message
+            });
+            alert('Error updating profile: ' + (error.response?.data?.message || error.message));
         } finally {
             setProfileLoading(false);
         }
     };
 
-    const handleChangePassword = async (e) => {
+    const handleSecurityUpdate = async (e) => {
         e.preventDefault();
         
-        if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-            return alert('All password fields are required');
+        if (!securityData.username) {
+            return alert('Username is required');
         }
 
-        if (passwordData.newPassword !== passwordData.confirmPassword) {
-            return alert('New password and confirm password do not match');
+        if (securityData.oldPassword || securityData.newPassword || securityData.confirmPassword) {
+            if (!securityData.oldPassword || !securityData.newPassword || !securityData.confirmPassword) {
+                return alert('All password fields are required to change password');
+            }
+
+            if (securityData.newPassword !== securityData.confirmPassword) {
+                return alert('New password and confirm password do not match');
+            }
+
+            if (securityData.newPassword.length < 6) {
+                return alert('Password must be at least 6 characters long');
+            }
         }
 
-        if (passwordData.newPassword.length < 6) {
-            return alert('Password must be at least 6 characters long');
-        }
-
-        setPasswordLoading(true);
+        setSecurityLoading(true);
         try {
-            await axios.post('/api/admin/change-password', {
-                oldPassword: passwordData.oldPassword,
-                newPassword: passwordData.newPassword,
-                confirmPassword: passwordData.confirmPassword
-            });
-            alert('✓ Password changed successfully!');
-            setPasswordData({
+            const payload = {
+                username: securityData.username,
+                ...(securityData.oldPassword && {
+                    oldPassword: securityData.oldPassword,
+                    newPassword: securityData.newPassword,
+                    confirmPassword: securityData.confirmPassword
+                })
+            };
+
+            console.log('Sending security update payload:', { username: payload.username, hasPassword: !!payload.oldPassword });
+            const { data } = await axios.put('/api/admin/security', payload);
+            console.log('Security update response:', data);
+            
+            alert('Security settings updated successfully!');
+            
+            // Update username in context if it changed
+            if (securityData.username !== user?.username) {
+                updateUserData({ username: securityData.username });
+            }
+            
+            setSecurityData({
+                username: securityData.username,
                 oldPassword: '',
                 newPassword: '',
                 confirmPassword: ''
             });
         } catch (error) {
-            alert('✕ ' + (error.response?.data?.message || 'Error changing password'));
+            console.error('Security update error:', {
+                status: error.response?.status,
+                message: error.response?.data?.message,
+                fullError: error.response?.data,
+                errorMessage: error.message
+            });
+            alert('Error: ' + (error.response?.data?.message || 'Error updating security settings'));
         } finally {
-            setPasswordLoading(false);
+            setSecurityLoading(false);
         }
     };
 
@@ -153,33 +185,7 @@ const SettingsTab = () => {
                     <div className="flex-1 space-y-6 w-full">
                         <div>
                             <h3 className="text-2xl font-black text-slate-800">Admin Profile</h3>
-                            <p className="text-sm text-slate-500 font-medium">Manage your personal account details and security.</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <User size={14} /> Username
-                                </label>
-                                <input 
-                                    type="text" 
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none bg-white font-bold text-slate-700"
-                                    value={profileData.username}
-                                    onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Lock size={14} /> New Password
-                                </label>
-                                <input 
-                                    type="password" 
-                                    placeholder="Leave blank to keep current"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary-500 outline-none bg-white"
-                                    value={profileData.password}
-                                    onChange={(e) => setProfileData({ ...profileData, password: e.target.value })}
-                                />
-                            </div>
+                            <p className="text-sm text-slate-500 font-medium">Upload and manage your profile photo.</p>
                         </div>
 
                         <div className="flex justify-end pt-2">
@@ -189,89 +195,103 @@ const SettingsTab = () => {
                                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-600 text-white font-bold hover:bg-primary-700 shadow-lg shadow-primary-500/20 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {profileLoading ? <Clock className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                                Update Profile Data
+                                Update Photo
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Password Change Section */}
+            {/* Security Settings Section */}
             <div className="glass-card p-8 border-rose-100 border-2 overflow-hidden relative">
                 <div className="absolute top-0 left-0 w-32 h-32 bg-rose-50 rounded-br-full -z-10" />
                 <div className="space-y-6">
                     <div className="flex items-center gap-3">
                         <div className="p-3 rounded-xl bg-rose-50 text-rose-600">
-                            <Lock size={24} />
+                            <ShieldCheck size={24} />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-slate-800">Change Password</h3>
-                            <p className="text-sm text-slate-500 font-medium">Update your account password securely</p>
+                            <h3 className="text-2xl font-black text-slate-800">Security Settings</h3>
+                            <p className="text-sm text-slate-500 font-medium">Manage username and password</p>
                         </div>
                     </div>
 
-                    <form onSubmit={handleChangePassword} className="space-y-4">
+                    <form onSubmit={handleSecurityUpdate} className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Old Password</label>
-                            <div className="relative">
-                                <input 
-                                    type={showOldPassword ? "text" : "password"}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white pr-10"
-                                    placeholder="Enter current password"
-                                    value={passwordData.oldPassword}
-                                    onChange={(e) => setPasswordData({...passwordData, oldPassword: e.target.value})}
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowOldPassword(!showOldPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                >
-                                    {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
+                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <User size={14} /> Username
+                            </label>
+                            <input 
+                                type="text" 
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white font-bold text-slate-700"
+                                value={securityData.username}
+                                onChange={(e) => setSecurityData({...securityData, username: e.target.value})}
+                                required
+                            />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border-t border-slate-100 pt-4">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">💡 Leave password fields blank to keep current password</p>
+
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">New Password</label>
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Old Password</label>
                                 <div className="relative">
                                     <input 
-                                        type={showNewPassword ? "text" : "password"}
+                                        type={showOldPassword ? "text" : "password"}
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white pr-10"
-                                        placeholder="Enter new password"
-                                        value={passwordData.newPassword}
-                                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                                        required
+                                        placeholder="Enter current password"
+                                        value={securityData.oldPassword}
+                                        onChange={(e) => setSecurityData({...securityData, oldPassword: e.target.value})}
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                        onClick={() => setShowOldPassword(!showOldPassword)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                                     >
-                                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        {showOldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Confirm Password</label>
-                                <div className="relative">
-                                    <input 
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white pr-10"
-                                        placeholder="Confirm new password"
-                                        value={passwordData.confirmPassword}
-                                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                    >
-                                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">New Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showNewPassword ? "text" : "password"}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white pr-10"
+                                            placeholder="Enter new password"
+                                            value={securityData.newPassword}
+                                            onChange={(e) => setSecurityData({...securityData, newPassword: e.target.value})}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Confirm Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-white pr-10"
+                                            placeholder="Confirm new password"
+                                            value={securityData.confirmPassword}
+                                            onChange={(e) => setSecurityData({...securityData, confirmPassword: e.target.value})}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -279,11 +299,11 @@ const SettingsTab = () => {
                         <div className="flex justify-end pt-4">
                             <button 
                                 type="submit"
-                                disabled={passwordLoading}
+                                disabled={securityLoading}
                                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 shadow-lg shadow-rose-500/20 transition-all active:scale-95 disabled:opacity-50"
                             >
-                                {passwordLoading ? <Clock className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                                Update Password
+                                {securityLoading ? <Clock className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                                Update Security
                             </button>
                         </div>
                     </form>

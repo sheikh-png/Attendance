@@ -5,6 +5,8 @@ const Student = require('../models/Student');
 const protect = async (req, res, next) => {
     let token;
 
+    const mongoose = require('mongoose');
+    
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
@@ -17,6 +19,12 @@ const protect = async (req, res, next) => {
                     role: 'admin'
                 };
                 return next();
+            }
+
+            // Validate ObjectId before querying
+            const mongoose = require('mongoose');
+            if (!mongoose.Types.ObjectId.isValid(decoded.id)) {
+                return res.status(401).json({ message: 'Invalid user ID format' });
             }
 
             let user = await Admin.findById(decoded.id).select('-password');

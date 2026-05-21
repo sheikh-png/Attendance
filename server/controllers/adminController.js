@@ -1,9 +1,16 @@
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, getYear, getMonth } = require('date-fns');
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
 const Config = require('../models/Config');
 const Admin = require('../models/Admin');
+
+// Helper function to validate ObjectId
+const isValidObjectId = (id) => {
+    if (id === 'env-admin') return true; // Allow env-admin special case
+    return mongoose.Types.ObjectId.isValid(id);
+};
 
 exports.getStudents = async (req, res) => {
     try {
@@ -270,7 +277,12 @@ exports.updateProfile = async (req, res) => {
 
     try {
         if (adminId === 'env-admin') {
-            return res.status(400).json({ message: 'Environment Admin profile cannot be edited via dashboard.' });
+            return res.status(400).json({ message: 'Environment Admin profile cannot be edited via dashboard. Update .env file instead.' });
+        }
+
+        // Validate ObjectId
+        if (!isValidObjectId(adminId)) {
+            return res.status(400).json({ message: 'Invalid admin ID format' });
         }
 
         const admin = await Admin.findById(adminId);
@@ -308,6 +320,16 @@ exports.changePassword = async (req, res) => {
 
         if (newPassword.length < 6) {
             return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+
+        // Check for env-admin
+        if (adminId === 'env-admin') {
+            return res.status(400).json({ message: 'Environment Admin password cannot be changed via dashboard. Update .env file instead.' });
+        }
+
+        // Validate ObjectId
+        if (!isValidObjectId(adminId)) {
+            return res.status(400).json({ message: 'Invalid admin ID format' });
         }
 
         const admin = await Admin.findById(adminId);

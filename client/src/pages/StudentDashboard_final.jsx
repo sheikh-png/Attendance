@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
     Clock, Calendar, CheckCircle2, XCircle, 
     MessageSquare, LogOut, ChevronRight, ChevronLeft, Timer, 
-    Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown 
+    Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown, Settings, Eye, EyeOff, X
 } from 'lucide-react';
 import axios from 'axios';
 import { format, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
@@ -19,6 +19,16 @@ const StudentDashboard = () => {
     const [settings, setSettings] = useState(null);
     const [slotStates, setSlotStates] = useState({}); // Stores { status: 'pending'|'active'|'closed', countdown: 'HH:MM:SS' }
     const [viewDate, setViewDate] = useState(new Date());
+    
+    // Password change modal state
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
 
     useEffect(() => {
         fetchDashboardData();
@@ -199,6 +209,42 @@ const StudentDashboard = () => {
         }
     };
 
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        
+        if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+            return alert('All password fields are required');
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            return alert('New password and confirm password do not match');
+        }
+
+        if (passwordData.newPassword.length < 6) {
+            return alert('Password must be at least 6 characters long');
+        }
+
+        setPasswordLoading(true);
+        try {
+            const { data } = await axios.put('/api/student/change-password', {
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword,
+                confirmPassword: passwordData.confirmPassword
+            });
+            
+            alert('Password changed successfully! Please log in again with your new password.');
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setShowPasswordModal(false);
+            // Log out after password change
+            setTimeout(() => logout(), 1000);
+        } catch (error) {
+            console.error('Password change error:', error.response?.data || error.message);
+            alert('Error: ' + (error.response?.data?.message || 'Error changing password'));
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
     const handlePrevMonth = () => setViewDate(subMonths(viewDate, 1));
     const handleNextMonth = () => setViewDate(addMonths(viewDate, 1));
 
@@ -237,6 +283,9 @@ const StudentDashboard = () => {
                                 {user.fullName ? user.fullName[0] : 'S'}
                             </div>
                         </div>
+                        <button onClick={() => setShowPasswordModal(true)} className="p-2.5 bg-blue-50 text-blue-500 rounded-xl hover:bg-blue-100 transition-all active:scale-95" title="Change Password">
+                            <Settings size={20} />
+                        </button>
                         <button onClick={logout} className="p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 transition-all active:scale-95">
                             <LogOut size={20} />
                         </button>
@@ -504,6 +553,106 @@ const StudentDashboard = () => {
                 </div>
             </main>
 
+            {/* Password Change Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-2xl font-black text-slate-900">Change Password</h3>
+                            <button 
+                                onClick={() => setShowPasswordModal(false)}
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePassword} className="space-y-4">
+                            {/* Current Password */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Current Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPasswords.current ? 'text' : 'password'}
+                                        value={passwordData.currentPassword}
+                                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter current password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">New Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPasswords.new ? 'text' : 'password'}
+                                        value={passwordData.newPassword}
+                                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter new password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Minimum 6 characters</p>
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
+                                <div className="relative">
+                                    <input
+                                        type={showPasswords.confirm ? 'text' : 'password'}
+                                        value={passwordData.confirmPassword}
+                                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Confirm new password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPasswordModal(false)}
+                                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-bold hover:bg-slate-200 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={passwordLoading}
+                                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all disabled:opacity-50"
+                                >
+                                    {passwordLoading ? 'Changing...' : 'Change Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,9 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
     Clock, Calendar, CheckCircle2, XCircle, 
     MessageSquare, LogOut, ChevronRight, ChevronLeft, Timer, 
-    Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown, Key, RefreshCw 
+    Wifi, MapPin, BarChart2, Users, TrendingUp, TrendingDown, Key, RefreshCw,
+    Eye, EyeOff
 } from 'lucide-react';
 import axios from 'axios';
 import { format, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, startOfWeek, endOfWeek, addMonths, subMonths, isSunday, isSameMonth } from 'date-fns';
@@ -25,6 +26,20 @@ const StudentDashboard = () => {
     const [inputCode, setInputCode] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Password change states
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false
+    });
+    const [passwordSubmitting, setPasswordSubmitting] = useState(false);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -272,6 +287,50 @@ const StudentDashboard = () => {
         }
     };
 
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        const { currentPassword, newPassword, confirmPassword } = passwordData;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return showToast('All fields are required', 'error');
+        }
+        if (newPassword !== confirmPassword) {
+            return showToast('New password and confirm password do not match', 'error');
+        }
+        if (newPassword.length < 6) {
+            return showToast('Password must be at least 6 characters long', 'error');
+        }
+
+        setPasswordSubmitting(true);
+        try {
+            await axios.put('/api/student/change-password', {
+                currentPassword,
+                newPassword,
+                confirmPassword
+            });
+            showToast('🎉 Password changed successfully! Logging out...', 'success');
+            setShowPasswordModal(false);
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            });
+            setShowPasswords({
+                current: false,
+                new: false,
+                confirm: false
+            });
+            // Automatically log out after 1.5 seconds so user can log in with new password
+            setTimeout(() => {
+                logout();
+            }, 1500);
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Error changing password', 'error');
+        } finally {
+            setPasswordSubmitting(false);
+        }
+    };
+
     const handlePrevMonth = () => setViewDate(subMonths(viewDate, 1));
     const handleNextMonth = () => setViewDate(addMonths(viewDate, 1));
 
@@ -341,6 +400,14 @@ const StudentDashboard = () => {
                         >
                             <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
                             Refresh
+                        </button>
+                        <button 
+                            onClick={() => setShowPasswordModal(true)} 
+                            className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all active:scale-95 flex items-center gap-2 font-bold text-sm"
+                            title="Change Password"
+                        >
+                            <Key size={18} />
+                            <span className="hidden md:inline">Change Password</span>
                         </button>
                         <button onClick={logout} className="p-2.5 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-100 transition-all active:scale-95">
                             <LogOut size={20} />
@@ -637,6 +704,109 @@ const StudentDashboard = () => {
                                 </p>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-300">
+                        <form onSubmit={handlePasswordChange} className="p-8 space-y-6">
+                            <div className="flex justify-between items-start">
+                                <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-600">
+                                    <Key size={32} />
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setShowPasswordModal(false);
+                                        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                    }} 
+                                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                                >
+                                    <XCircle size={24} />
+                                </button>
+                            </div>
+
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-800">Change Password</h3>
+                                <p className="text-slate-500 font-medium mt-1 text-sm">Update your account password to keep it secure.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-1.5 relative">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Current Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showPasswords.current ? "text" : "password"}
+                                            placeholder="Enter current password"
+                                            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-700 pr-12"
+                                            value={passwordData.currentPassword}
+                                            onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 relative">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">New Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showPasswords.new ? "text" : "password"}
+                                            placeholder="Enter new password (min. 6 chars)"
+                                            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-700 pr-12"
+                                            value={passwordData.newPassword}
+                                            onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 relative">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Confirm Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            type={showPasswords.confirm ? "text" : "password"}
+                                            placeholder="Confirm new password"
+                                            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-slate-700 pr-12"
+                                            value={passwordData.confirmPassword}
+                                            onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    type="submit"
+                                    disabled={passwordSubmitting}
+                                    className="w-full py-4 mt-2 rounded-2xl bg-indigo-600 text-white font-black uppercase tracking-widest shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-3"
+                                >
+                                    {passwordSubmitting ? <RefreshCw size={20} className="animate-spin" /> : 'Change Password'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
