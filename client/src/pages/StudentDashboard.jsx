@@ -599,15 +599,29 @@ const StudentDashboard = () => {
                         <div className="grid grid-cols-7 gap-1.5">
                             {calendarDays.map(day => {
                                 const dateStr = format(day, 'yyyy-MM-dd');
-                                const recordsForDate = dashboardData.attendance.filter(a => a.date === dateStr);
-                                const record = recordsForDate.find(a => a.totalStatus !== 'Pending') || recordsForDate[0];
-
                                 const isCurrentMonth = day.getMonth() === viewDate.getMonth();
                                 const isSun = isSunday(day);
-                                
+                                const isTodayDate = isToday(day);
+
+                                // Check if day is before join date
+                                const isBeforeJoin = joinDate && startOfDay(day) < joinDate;
+
+                                // If before join date, show as disabled/empty
+                                if (isBeforeJoin) {
+                                    return (
+                                        <div 
+                                            key={day.toISOString()} 
+                                            className="aspect-square flex items-center justify-center rounded-xl text-[11px] font-black transition-all opacity-20 pointer-events-none bg-slate-50 text-slate-300"
+                                        >
+                                            {format(day, 'd')}
+                                        </div>
+                                    );
+                                }
+
+                                const recordsForDate = dashboardData.attendance.filter(a => a.date === dateStr);
+                                const record = recordsForDate.find(a => a.totalStatus !== 'Pending') || recordsForDate[0];
                                 const hasValidRecord = record && ['Present', 'Absent', 'Leave'].includes(record.totalStatus);
 
-                                const isTodayDate = isToday(day);
                                 let isTodayExpired = false;
                                 if (isTodayDate && settings && !record) {
                                     isTodayExpired = Object.keys(settings.slots).every(slotKey => {
@@ -618,7 +632,6 @@ const StudentDashboard = () => {
                                     });
                                 }
 
-                                const isBeforeJoin = joinDate && startOfDay(day) < joinDate;
                                 let statusColor = 'bg-slate-50 text-slate-300';
                                 if (record?.totalStatus === 'Present') {
                                     statusColor = 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400/50';
@@ -626,7 +639,7 @@ const StudentDashboard = () => {
                                     statusColor = 'bg-rose-500 text-white shadow-sm ring-1 ring-rose-400/50';
                                 } else if (isSun) {
                                     statusColor = 'bg-rose-500/10 text-rose-500 font-black';
-                                } else if (isTodayExpired || (isCurrentMonth && day < now && !isTodayDate && !record && !isBeforeJoin)) {
+                                } else if (isTodayExpired || (isCurrentMonth && day < now && !isTodayDate && !record)) {
                                     statusColor = 'bg-rose-500 text-white shadow-sm ring-1 ring-rose-400/50';
                                 }
                                 
@@ -635,7 +648,7 @@ const StudentDashboard = () => {
                                         key={day.toISOString()} 
                                         className={`aspect-square flex items-center justify-center rounded-xl text-[11px] font-black transition-all ${
                                             !isCurrentMonth ? 'opacity-20 pointer-events-none' : ''
-                                        } ${statusColor} ${isToday(day) ? 'ring-2 ring-primary-500 ring-offset-2 scale-110 shadow-lg' : ''}`}
+                                        } ${statusColor} ${isTodayDate ? 'ring-2 ring-primary-500 ring-offset-2 scale-110 shadow-lg' : ''}`}
                                     >
                                         {isSun && !hasValidRecord ? 'SUN' : format(day, 'd')}
                                     </div>

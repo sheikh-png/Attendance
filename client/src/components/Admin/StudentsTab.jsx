@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Search, Filter, Plus, Download, Edit2, Trash2, 
     User, Users, UserCheck, UserX,
-    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert, Eye, EyeOff, Check
+    TrendingUp, TrendingDown, RefreshCw, ShieldCheck, ShieldAlert, Eye, EyeOff, Check, Calendar
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -281,20 +281,51 @@ const StudentsTab = ({ stats, refreshStats }) => {
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Contact Info</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Course</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">House</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Joining Date</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredStudents.map((student) => (
-                            <tr key={student._id} className="hover:bg-slate-50/50 transition-colors">
+                        {filteredStudents.map((student) => {
+                            const parseDate = (dateVal) => {
+                                if (!dateVal) return new Date().toISOString().split('T')[0];
+                                const d = (dateVal._seconds) ? new Date(dateVal._seconds * 1000) : new Date(dateVal);
+                                return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
+                            };
+                            const openEditModal = () => {
+                                const studentToEdit = { 
+                                    ...student, 
+                                    gender: student.gender || 'Male',
+                                    joinDate: parseDate(student.joinDate || student.createdAt)
+                                };
+                                setFormData(studentToEdit);
+                                setIsEditing(true);
+                                setCurrentStudent(student);
+                                setShowAddModal(true);
+                            };
+                            const rawJoin = student.joinDate || student.createdAt;
+                            const joinDateDisplay = rawJoin
+                                ? (() => {
+                                    const d = rawJoin._seconds ? new Date(rawJoin._seconds * 1000) : new Date(rawJoin);
+                                    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                                })()
+                                : '—';
+
+                            return (
+                            <tr
+                                key={student._id}
+                                className="hover:bg-primary-50/40 transition-colors cursor-pointer group"
+                                onClick={openEditModal}
+                                title="Click to edit student"
+                            >
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs">
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-primary-100 flex items-center justify-center text-slate-500 group-hover:text-primary-600 font-bold text-xs transition-colors">
                                             {student.fullName.charAt(0)}
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <p className="font-semibold text-slate-900">{student.fullName}</p>
+                                                <p className="font-semibold text-slate-900 group-hover:text-primary-700 transition-colors">{student.fullName}</p>
                                                 {student.role === 'co-admin' && (
                                                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-black uppercase border border-amber-100">
                                                         <ShieldCheck size={10} /> Co-Admin
@@ -324,10 +355,16 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                 </td>
                                 <td className="px-6 py-4 text-sm text-slate-600">{student.course}</td>
                                 <td className="px-6 py-4 text-sm text-slate-600">{student.house}</td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-6 py-4">
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 group-hover:bg-indigo-100 transition-colors">
+                                        <Calendar size={12} className="shrink-0 text-indigo-400" />
+                                        <span className="text-xs font-bold whitespace-nowrap">{joinDateDisplay}</span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
                                     <div className="flex items-center justify-end gap-2">
                                         <button 
-                                            onClick={() => toggleCoAdmin(student)}
+                                            onClick={(e) => { e.stopPropagation(); toggleCoAdmin(student); }}
                                             className={`p-2 rounded-lg transition-colors ${
                                                 student.role === 'co-admin' 
                                                 ? 'text-amber-500 bg-amber-50 hover:bg-amber-100' 
@@ -338,36 +375,24 @@ const StudentsTab = ({ stats, refreshStats }) => {
                                             <ShieldCheck size={16} />
                                         </button>
                                         <button 
-                                            onClick={() => {
-                                                const parseDate = (dateVal) => {
-                                                    if (!dateVal) return new Date().toISOString().split('T')[0];
-                                                    const d = (dateVal._seconds) ? new Date(dateVal._seconds * 1000) : new Date(dateVal);
-                                                    return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
-                                                };
-                                                const studentToEdit = { 
-                                                    ...student, 
-                                                    gender: student.gender || 'Male',
-                                                    joinDate: parseDate(student.joinDate || student.createdAt)
-                                                };
-                                                setFormData(studentToEdit);
-                                                setIsEditing(true);
-                                                setCurrentStudent(student);
-                                                setShowAddModal(true);
-                                            }}
+                                            onClick={(e) => { e.stopPropagation(); openEditModal(); }}
                                             className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+                                            title="Edit student"
                                         >
                                             <Edit2 size={16} />
                                         </button>
                                         <button 
-                                            onClick={() => handleDelete(student._id)}
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(student._id); }}
                                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                            title="Delete student"
                                         >
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

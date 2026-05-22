@@ -504,15 +504,30 @@ const StudentDashboard = () => {
                             <div className="grid grid-cols-7 gap-1">
                                 {calendarDays.map(day => {
                                     const dateStr = format(day, 'yyyy-MM-dd');
-                                    const record = dashboardData.attendance.find(a => a.date === dateStr);
                                     const isCurrentMonth = day.getMonth() === viewDate.getMonth();
                                     const isSun = isSunday(day);
+                                    
+                                    // Check if day is before join date
                                     const isBeforeJoin = joinDate && startOfDay(day) < joinDate;
+                                    
+                                    // If before join date, show as disabled/empty
+                                    if (isBeforeJoin) {
+                                        return (
+                                            <div 
+                                                key={day.toISOString()} 
+                                                className="aspect-square flex items-center justify-center rounded-lg text-[9px] font-black transition-all opacity-20 pointer-events-none bg-slate-50 text-slate-300"
+                                            >
+                                                {format(day, 'd')}
+                                            </div>
+                                        );
+                                    }
+
+                                    const record = dashboardData.attendance.find(a => a.date === dateStr);
                                     
                                     let statusColor = 'bg-slate-50 text-slate-300';
                                     if (isSun) statusColor = 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-200';
                                     else if (record?.totalStatus === 'Present') statusColor = 'bg-emerald-500 text-white shadow-sm';
-                                    else if (record?.totalStatus === 'Absent' || (isCurrentMonth && day < now && !isSameDay(day, now) && !record && !isBeforeJoin)) statusColor = 'bg-rose-500 text-white shadow-sm';
+                                    else if (record?.totalStatus === 'Absent' || (isCurrentMonth && day < now && !isSameDay(day, now) && !record)) statusColor = 'bg-rose-500 text-white shadow-sm';
                                     
                                     return (
                                         <div 
