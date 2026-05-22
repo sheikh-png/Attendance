@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Users, Home, Calendar, Award, AlertTriangle, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { format, getDaysInMonth, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth, eachDayOfInterval, isSunday } from 'date-fns';
@@ -40,7 +40,7 @@ const MonthlyProgressTab = () => {
             const studentMetrics = students.map(s => {
                 // Calculate class days for THIS specific student
                 // Start from: max(joinDate, monthStart)
-                const studentJoinDate = new Date(s.joinDate);
+                const studentJoinDate = new Date(s.joinDate || s.createdAt);
                 const effectiveStart = studentJoinDate > monthStart ? studentJoinDate : monthStart;
                 
                 // End on: min(today, monthEnd) if current month, else monthEnd

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     format,
@@ -126,7 +126,8 @@ const AllAttendanceTab = (props) => {
         }
 
         const student = students.find(s => s.studentId === studentId);
-        const joinDateObj = student?.joinDate ? new Date(student.joinDate) : null;
+        const rawJoin = student?.joinDate || student?.createdAt;
+        const joinDateObj = rawJoin ? new Date(rawJoin) : null;
         const isBeforeJoin = joinDateObj && startOfDay(date) < startOfDay(joinDateObj);
 
         // No record exists
@@ -363,7 +364,8 @@ const AllAttendanceTab = (props) => {
                                     </td>
                                     {dates.map(date => {
                                          const isSun = isSunday(date);
-                                         const joinDateObj = student?.joinDate ? new Date(student.joinDate) : null;
+                                         const rawJoin = student?.joinDate || student?.createdAt;
+                                         const joinDateObj = rawJoin ? new Date(rawJoin) : null;
                                          const isBeforeJoin = joinDateObj && startOfDay(date) < startOfDay(joinDateObj);
                                          const entry = getAttendanceEntry(student.studentId, date);
                                          

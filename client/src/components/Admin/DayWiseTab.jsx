@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, Search, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import axios from 'axios';
 import { 
@@ -48,7 +48,8 @@ const DayWiseTab = () => {
         // Simple matching like Monthly tab for consistency
         const record = attendance.find(a => a.studentId === student.studentId);
         
-        const joinDateObj = student?.joinDate ? new Date(student.joinDate) : null;
+        const rawJoin = student?.joinDate || student?.createdAt;
+        const joinDateObj = rawJoin ? new Date(rawJoin) : null;
         const isBeforeJoin = joinDateObj && startOfDay(selectedDate) < startOfDay(joinDateObj);
         const isPastDate = startOfDay(selectedDate) < startOfDay(new Date());
         

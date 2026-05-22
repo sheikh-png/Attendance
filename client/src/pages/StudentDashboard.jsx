@@ -101,11 +101,11 @@ const StudentDashboard = () => {
         }
     };
 
-    const joinDate = user?.joinDate ? startOfDay(new Date(user.joinDate)) : null;
+    const joinDate = (user?.joinDate || user?.createdAt) ? startOfDay(new Date(user.joinDate || user.createdAt)) : null;
 
     useEffect(() => {
         calculateMonthlyStats();
-    }, [viewDate, dashboardData.attendance, user?.joinDate]);
+    }, [viewDate, dashboardData.attendance, user?.joinDate, user?.createdAt]);
 
     const calculateMonthlyStats = () => {
         const start = startOfMonth(viewDate);

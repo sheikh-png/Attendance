@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, ChevronLeft, ChevronRight, UserMinus, AlertCircle, Download } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, startOfDay, isSameDay, isSameMonth, parseISO } from 'date-fns';
@@ -90,8 +90,9 @@ const TotalAbsentsTab = () => {
 
             // Parse Join Date safely
             let joinDate = null;
-            if (s.joinDate) {
-                const [y, m, d] = s.joinDate.split('T')[0].split('-').map(Number);
+            const rawJoin = s.joinDate || s.createdAt;
+            if (rawJoin) {
+                const [y, m, d] = rawJoin.split('T')[0].split('-').map(Number);
                 joinDate = new Date(y, m - 1, d);
             }
 
